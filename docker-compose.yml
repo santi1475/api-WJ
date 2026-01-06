@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=saas_db
+      - POSTGRES_USER=santiago
+      - POSTGRES_PASSWORD=1475
+    ports:
+      - "5433:5432"
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_NAME=saas_db
+      - DB_USER=santiago
+      - DB_PASSWORD=1475
+      - DB_HOST=db
+      - DB_PORT=5432
+
+volumes:
+  postgres_data:
