@@ -5,3 +5,4 @@ djangorestframework-simplejwt
 python-dotenv
 celery
 redis
+django-cors-headers
