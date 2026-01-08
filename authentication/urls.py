@@ -1,11 +1,15 @@
-from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenRefreshView
+from .views import CustomTokenObtainPairView, RoleViewSet, PermissionViewSet
+
+router = DefaultRouter()
+router.register(r'roles', RoleViewSet, basename='roles')
+router.register(r'permissions', PermissionViewSet, basename='permissions')
 
 urlpatterns = [
-    # Aquí definimos las rutas específicas de autenticación
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    path('', include(router.urls)),
 ]

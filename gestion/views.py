@@ -7,9 +7,8 @@ from rest_framework.response import Response
 def holamundo(request):
     return HttpResponse("xd!")
 
-# Esta es la vista que te falta y está causando el error
 @api_view(['GET'])
-@permission_classes([IsAuthenticated]) # Protege la ruta
+@permission_classes([IsAuthenticated]) 
 def dashboard_data(request):
     return Response({
         "message": f"Bienvenido al dashboard seguro, {request.user.username}",
