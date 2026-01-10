@@ -5,6 +5,7 @@ import rest_framework.serializers as serializers
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.hashers import make_password
 
 User = get_user_model()
 
@@ -69,3 +70,62 @@ class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
         fields = ['id', 'name', 'permissions']
+
+class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, style={'input_type': 'password'})
+    groups = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Group.objects.all(),
+        required=False,
+        help_text="Roles asignados al usuario"
+    )
+    roles = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'password', 'is_active', 'is_staff', 'is_superuser',
+            'groups', 'roles', 'date_joined', 'last_login'
+        ]
+        read_only_fields = ['date_joined', 'last_login']
+
+    def get_roles(self, obj):
+        """Devuelve los nombres de los roles asignados"""
+        return [{'id': group.id, 'name': group.name} for group in obj.groups.all()]
+
+    def create(self, validated_data):
+        groups = validated_data.pop('groups', [])
+        password = validated_data.pop('password', None)
+        
+        # Crear el usuario
+        if password:
+            validated_data['password'] = make_password(password)
+        
+        user = User.objects.create(**validated_data)
+        
+        # Asignar roles (grupos)
+        if groups:
+            user.groups.set(groups)
+        
+        return user
+
+    def update(self, instance, validated_data):
+        groups = validated_data.pop('groups', None)
+        password = validated_data.pop('password', None)
+        
+        # Actualizar contraseña si se proporciona
+        if password:
+            instance.password = make_password(password)
+        
+        # Actualizar campos básicos
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        
+        # Actualizar roles si se proporcionan
+        if groups is not None:
+            instance.groups.set(groups)
+        
+        return instance

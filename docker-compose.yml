@@ -27,6 +27,8 @@ services:
       - DB_PASSWORD=1475
       - DB_HOST=db
       - DB_PORT=5432
+    env_file:
+      - .env
 
 volumes:
   postgres_data:

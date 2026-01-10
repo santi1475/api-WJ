@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -8,10 +9,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_8u%y2*uex1e^4_rg2-@^^rc!msp#n8rndi396#@(90ee@03m='
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -30,6 +31,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'gestion',
     'authentication',
+    'encrypted_model_fields',
 ]
 
 MIDDLEWARE = [
@@ -129,3 +131,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+
+FIELD_ENCRYPTION_KEY = os.environ.get(
+    'FIELD_ENCRYPTION_KEY', 
+    'v0Xj8Q9p2X0d8Q9p2X0d8Q9p2X0d8Q9p2X0d8Q9p2X0='
+)
