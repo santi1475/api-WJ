@@ -1,95 +1,92 @@
 from django.db import models
-from django.contrib.auth.models import User
-from encrypted_model_fields.fields import EncryptedCharField
+from django.conf import settings
 
 class Cliente(models.Model):
-    # --- Identificación ---
-    razon_social = models.CharField(max_length=255)
-    ruc = models.CharField(max_length=11, unique=True)
-    codigo_control = models.IntegerField(null=True, blank=True, help_text="Código administrativo interno")
-    
-    propietario = models.CharField(max_length=255)
-    responsable = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    fecha_ingreso = models.DateField()
-    
-    # --- Clasificación ---
-    estado = models.CharField(max_length=20, default='ACTIVO')
-    categoria = models.CharField(max_length=50, blank=True) # A, B, C
-    
-    # --- Finanzas (Foto actual) ---
-    ingreso_anual = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    ingreso_mensual = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    
-    # --- Auditoría ---
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.razon_social} ({self.ruc})"
-
-class DatosTributarios(models.Model):
-    cliente = models.OneToOneField(Cliente, on_delete=models.CASCADE, related_name='datos_tributarios')
-    
-    # Clave SOL
-    usuario_sol = models.CharField(max_length=50, blank=True)
-    clave_sol = EncryptedCharField(max_length=100, blank=True) # Encriptado
-    
-    class Regimen(models.TextChoices):
-        RMT = 'RMT', 'Régimen Mype Tributario'
-        GENERAL = 'GENERAL', 'Régimen General'
+    class RegimenTributario(models.TextChoices):
+        RMT = 'RMT', 'Régimen MYPE Tributario'
         ESPECIAL = 'ESPECIAL', 'Régimen Especial'
         RUS = 'RUS', 'Nuevo RUS'
-        
-    regimen_tributario = models.CharField(choices=Regimen.choices, max_length=20, blank=True)
-    
-    # Datos Laborales
-    regimen_laboral = models.CharField(max_length=50, blank=True) # Micro Emp., Pequeña Emp.
-    fecha_acreditacion_remype = models.DateField(null=True, blank=True)
-    
-    # --- Auditoría ---
+        GENERAL = 'GENERAL', 'Régimen General'
+
+    class TipoEmpresa(models.TextChoices):
+        SAC = 'SAC', 'Sociedad Anónima Cerrada'
+        EIRL = 'EIRL', 'Empresa Individual de Resp. Ltda.'
+        SRL = 'SRL', 'Sociedad Comercial de Resp. Ltda.'
+        SA = 'SA', 'Sociedad Anónima'
+        PN = 'PN', 'Persona Natural'
+
+    class Categoria(models.TextChoices):
+        A = 'A', 'Categoría A'
+        B = 'B', 'Categoría B'
+        C = 'C', 'Categoría C'
+
+    # IDENTIFICACIÓN
+    ruc = models.CharField(max_length=11, unique=True, primary_key=True)
+    razon_social = models.CharField(max_length=255)
+    propietario = models.CharField(max_length=255)
+    dni_propietario = models.CharField(max_length=8, blank=True, null=True)
+
+    # GESTIÓN
+    estado = models.BooleanField(default=True)
+    codigo_control = models.IntegerField(null=True, blank=True)
+    responsable = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="clientes_asignados"
+    )
+
+    # CLASIFICACIÓN
+    regimen_tributario = models.CharField(max_length=20, choices=RegimenTributario.choices, default=RegimenTributario.RMT)
+    tipo_empresa = models.CharField(max_length=20, choices=TipoEmpresa.choices, default=TipoEmpresa.PN)
+    categoria = models.CharField(max_length=20, choices=Categoria.choices, blank=True, null=True)
+
+    # RÉGIMEN LABORAL
+    regimen_laboral_tipo = models.CharField(max_length=100, blank=True, null=True)
+    regimen_laboral_fecha = models.DateField(blank=True, null=True)
+
+    # FINANCIERO
+    ingresos_mensuales = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    ingresos_anuales = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    libros_societarios = models.IntegerField(default=0)
+    selectivo_consumo = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Datos Tributarios de {self.cliente}"
+        return f"{self.ruc} - {self.razon_social}"
 
-class CuentaDetraccion(models.Model):
-    
-    # --- Auditoría ---
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    cliente = models.OneToOneField(Cliente, on_delete=models.CASCADE, related_name='cuenta_detraccion')
-    numero_cuenta = models.CharField(max_length=50)
-    dni_titular = models.CharField(max_length=15, null=True, blank=True)
-    clave = EncryptedCharField(max_length=50, blank=True) # Encriptado
+class Credenciales(models.Model):
+    cliente = models.OneToOneField(Cliente, on_delete=models.CASCADE, related_name="credenciales")
+    pe = models.CharField(max_length=50, blank=True, null=True)
 
-    def __str__(self):
-        return self.numero_cuenta
+    # SUNAT
+    sol_usuario = models.CharField(max_length=100, blank=True, null=True)
+    sol_clave = models.CharField(max_length=100, blank=True, null=True)
 
-class CredencialPlataforma(models.Model):
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='credenciales')
-    
-    class Plataforma(models.TextChoices):
-        INEI = 'INEI', 'INEI'
-        OSCE = 'OSCE', 'OSCE'
-        SENSICO = 'SENSICO', 'SENSICO'
-        AFP = 'AFP', 'AFP NET'
-        SIS = 'SIS', 'SIS'
-        ESSALUD = 'ESSALUD', 'Viva Essalud'
-        # Puedes agregar más aquí fácilmente
-        
-    plataforma = models.CharField(choices=Plataforma.choices, max_length=20)
-    
-    # --- Soft Delete ---
-    activo = models.BooleanField(default=True)
-    
-    # --- Auditoría ---
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    usuario = models.CharField(max_length=100, blank=True)
-    clave = EncryptedCharField(max_length=100) # Encriptado
-    
-    url_acceso = models.URLField(blank=True, null=True)
+    # DETRACCIONES (J, K, L)
+    detraccion_cuenta = models.CharField(max_length=50, blank=True, null=True)
+    detraccion_usuario = models.CharField(max_length=100, blank=True, null=True)
+    detraccion_clave = models.CharField(max_length=100, blank=True, null=True)
+
+    # INEI (M, N)
+    inei_usuario = models.CharField(max_length=100, blank=True, null=True)
+    inei_clave = models.CharField(max_length=100, blank=True, null=True)
+
+    # AFP NET
+    afp_net_usuario = models.CharField(max_length=100, blank=True, null=True)
+    afp_net_clave = models.CharField(max_length=100, blank=True, null=True)
+
+    # VIVA ESSALUD
+    viva_essalud_usuario = models.CharField(max_length=100, blank=True, null=True)
+    viva_essalud_clave = models.CharField(max_length=100, blank=True, null=True)
+
+    # OTROS
+    sis_usuario = models.CharField(max_length=100, blank=True, null=True)
+    sis_clave = models.CharField(max_length=100, blank=True, null=True)
+    clave_osce = models.CharField(max_length=100, blank=True, null=True)
+    clave_sencico = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.plataforma} - {self.cliente}"
+        return f"Creds: {self.cliente.ruc}"

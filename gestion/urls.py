@@ -1,19 +1,12 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ClienteViewSet
+
+# El Router crea automáticamente las rutas del CRUD (GET, POST, PUT, DELETE)
+router = DefaultRouter()
+router.register(r'clientes', ClienteViewSet, basename='cliente')
 
 urlpatterns = [
-    # --- Clientes ---
-    path('clientes/', views.cliente_list_create, name='cliente-list'),
-    path('clientes/<int:pk>/', views.cliente_detail, name='cliente-detail'),
-    
-    # --- Credenciales (Netflix, Bancos, etc - 1 a N) ---
-    path('credenciales/', views.credencial_list, name='credencial-list'),
-    path('credenciales/crear/', views.credencial_create, name='credencial-create'),
-    path('credenciales/<int:pk>/', views.credencial_detail, name='credencial-detail'),
-    
-    # --- Datos Únicos (1 a 1) ---
-    # Estas rutas sirven tanto para crear como para editar.
-    # Solo necesitas enviar { "cliente": ID, ...datos... }
-    path('datos-tributarios/gestionar/', views.datos_tributarios_manage, name='tributarios-manage'),
-    path('cuenta-detraccion/gestionar/', views.cuenta_detraccion_manage, name='detraccion-manage'),
+    # Esto incluye todas las rutas generadas por el router
+    path('', include(router.urls)),
 ]

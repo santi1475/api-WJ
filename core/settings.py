@@ -136,3 +136,4 @@ FIELD_ENCRYPTION_KEY = os.environ.get(
     'FIELD_ENCRYPTION_KEY', 
     'v0Xj8Q9p2X0d8Q9p2X0d8Q9p2X0d8Q9p2X0d8Q9p2X0='
 )
+AUTH_USER_MODEL = 'authentication.User'
