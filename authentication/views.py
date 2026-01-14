@@ -10,6 +10,7 @@ from .serializers import (
     UserSerializer
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.exceptions import ValidationError
 
 User = get_user_model()
 
@@ -20,6 +21,8 @@ class RoleViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAdminUser]
+
+    PROTECTED_ROLES = ['ADMIN', 'CONTADOR', 'ASISTENTE', 'CLIENTE']
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -32,23 +35,26 @@ class RoleViewSet(viewsets.ModelViewSet):
         })
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+        name = request.data.get('name')
+        if Group.objects.filter(name=name).exists():
             return Response({
-                "message": "Rol creado exitosamente",
-                "data": serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                "code": 400,
+                "message": f"El rol '{name}' ya existe."
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
+
+        new_name = request.data.get('name')
+        if instance.name in self.PROTECTED_ROLES and new_name and new_name != instance.name:
+            return Response({
+                "code": 403,
+                "message": f"No se puede renombrar el rol protegido del sistema: {instance.name}"
+            }, status=status.HTTP_403_FORBIDDEN)
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         if serializer.is_valid():
             serializer.save()
@@ -61,11 +67,24 @@ class RoleViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+
+        if instance.name in self.PROTECTED_ROLES:
+            return Response({
+                "code": 403,
+                "message": f"No se puede eliminar el rol protegido: {instance.name}"
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        if instance.user_set.exists():
+            return Response({
+                "code": 400,
+                "message": "No se puede eliminar este rol porque hay usuarios asignados a él."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         self.perform_destroy(instance)
         return Response({
             "code": 200,
             "message": "Rol eliminado correctamente"
-        }, status=status.HTTP_204_NO_CONTENT)
+        }, status=status.HTTP_200_OK)
 
 class PermissionViewSet(viewsets.ModelViewSet):
     queryset = Permission.objects.all()
