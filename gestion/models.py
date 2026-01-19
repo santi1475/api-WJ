@@ -25,6 +25,7 @@ class Cliente(models.Model):
     razon_social = models.CharField(max_length=255)
     propietario = models.CharField(max_length=255)
     dni_propietario = models.CharField(max_length=8, blank=True, null=True)
+    fecha_ingreso = models.DateField(blank=True, null=True, verbose_name='Fecha de Ingreso')
 
     # GESTIÓN
     estado = models.BooleanField(default=True)
