@@ -7,3 +7,4 @@ celery
 redis
 django-cors-headers
 django-encrypted-model-fields
+openpyxl

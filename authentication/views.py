@@ -186,7 +186,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def permissions(self, request, pk=None):
-        """Obtener todos los permisos de un usuario (directos + de roles)"""
         user = self.get_object()
         permissions = user.get_all_permissions()
         
