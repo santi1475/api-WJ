@@ -1,9 +1,10 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
+from django.utils import timezone
 from .models import Cliente
 from .serializers import ClienteSerializer
 from .utils import generar_excel_masivo
@@ -16,6 +17,13 @@ class ClienteViewSet(viewsets.ModelViewSet):
         
         user = self.request.user
         queryset = Cliente.objects.select_related('credenciales', 'responsable').all()
+        
+        # --- LÓGICA DE FILTRADO (SOFT DELETE) ---
+        # Por defecto, solo mostramos los activos.
+        # Si quieres ver todo (para depurar), podrías pasar ?include_deleted=true en la URL
+        if not self.request.query_params.get('include_deleted'):
+            queryset = queryset.filter(estado=True)
+        # ----------------------------------------
         
         if user.is_superuser or user.id == 1:
             return queryset
@@ -73,3 +81,54 @@ class ClienteViewSet(viewsets.ModelViewSet):
         
         wb.save(response)
         return response
+    
+    @action(detail=False, methods=['get'], url_path='bajas')
+    def listar_bajas(self, request):
+        user = request.user
+        queryset = Cliente.objects.filter(estado=False).select_related('credenciales', 'responsable')
+        
+        if not (user.is_superuser or user.id == 1):
+            queryset = queryset.filter(responsable=user)
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='dar-baja')
+    def dar_baja(self, request, pk=None):
+        cliente = self.get_object()
+        
+        cliente.estado = False
+        cliente.fecha_baja = timezone.now().date()
+        cliente.save()
+
+        return Response({
+            "code": 200,
+            "message": f"Cliente {cliente.razon_social} dado de baja correctamente."
+        })
+
+    @action(detail=True, methods=['post'], url_path='reactivar')
+    def reactivar(self, request, pk=None):
+        """Restaura un cliente dado de baja"""
+        user = request.user
+        
+        try:
+            cliente = Cliente.objects.get(pk=pk)
+            
+            # Verificación de seguridad manual (ya que nos saltamos get_queryset)
+            if not (user.is_superuser or user.id == 1) and cliente.responsable != user:
+                return Response(
+                    {"error": "No tienes permiso para reactivar este cliente"}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+        except Cliente.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        cliente.estado = True
+        cliente.fecha_baja = None
+        cliente.save()
+        
+        return Response({
+            "code": 200,
+            "message": f"Cliente {cliente.razon_social} reactivado exitosamente."
+        })

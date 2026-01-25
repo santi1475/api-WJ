@@ -54,6 +54,9 @@ class Cliente(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    #Fecha de baja
+    fecha_baja = models.DateField(null=True, blank=True, verbose_name='Fecha de Baja')
 
     def __str__(self):
         return f"{self.ruc} - {self.razon_social}"
