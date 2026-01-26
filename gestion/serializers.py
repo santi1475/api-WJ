@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Cliente, Credenciales
+from .models import Cliente, Credenciales, HistorialEstado
 
 class CredencialesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,9 +13,17 @@ class ResponsableSerializer(serializers.Serializer):
     last_name = serializers.CharField()
     email = serializers.EmailField()
 
+class HistorialEstadoSerializer(serializers.ModelSerializer):
+    responsable_nombre = serializers.CharField(source='usuario_responsable.username', read_only=True)
+
+    class Meta:
+        model = HistorialEstado
+        fields = ['id', 'tipo_evento', 'fecha', 'usuario_responsable', 'responsable_nombre', 'created_at']
+
 class ClienteSerializer(serializers.ModelSerializer):
     credenciales = CredencialesSerializer()
     responsable_info = serializers.SerializerMethodField()
+    historial = HistorialEstadoSerializer(source='historial_estados', many=True, read_only=True)
 
     class Meta:
         model = Cliente

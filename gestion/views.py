@@ -5,25 +5,30 @@ from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
 from django.utils import timezone
-from .models import Cliente
+from .models import Cliente, HistorialEstado
 from .serializers import ClienteSerializer
 from .utils import generar_excel_masivo
 
 class ClienteViewSet(viewsets.ModelViewSet):
     serializer_class = ClienteSerializer
     permission_classes = [IsAuthenticated]
-
+    
+    def perform_create(self, serializer):
+        cliente = serializer.save()
+        HistorialEstado.objects.create(
+            cliente=cliente,
+            tipo_evento='INGRESO',
+            fecha=cliente.fecha_ingreso or timezone.now().date(),
+            usuario_responsable=self.request.user
+        )
+    
     def get_queryset(self):
         
         user = self.request.user
         queryset = Cliente.objects.select_related('credenciales', 'responsable').all()
         
-        # --- LÓGICA DE FILTRADO (SOFT DELETE) ---
-        # Por defecto, solo mostramos los activos.
-        # Si quieres ver todo (para depurar), podrías pasar ?include_deleted=true en la URL
         if not self.request.query_params.get('include_deleted'):
             queryset = queryset.filter(estado=True)
-        # ----------------------------------------
         
         if user.is_superuser or user.id == 1:
             return queryset
@@ -96,10 +101,20 @@ class ClienteViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='dar-baja')
     def dar_baja(self, request, pk=None):
         cliente = self.get_object()
+        fecha_baja = request.data.get('fecha', timezone.now().date())
         
+        # Actualizamos estado actual
         cliente.estado = False
-        cliente.fecha_baja = timezone.now().date()
+        cliente.fecha_baja = fecha_baja
         cliente.save()
+
+        # Registramos en el historial
+        HistorialEstado.objects.create(
+            cliente=cliente,
+            tipo_evento='BAJA',
+            fecha=fecha_baja,
+            usuario_responsable=request.user
+        )
 
         return Response({
             "code": 200,
@@ -108,25 +123,25 @@ class ClienteViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='reactivar')
     def reactivar(self, request, pk=None):
-        """Restaura un cliente dado de baja"""
         user = request.user
-        
         try:
             cliente = Cliente.objects.get(pk=pk)
-            
-            # Verificación de seguridad manual (ya que nos saltamos get_queryset)
             if not (user.is_superuser or user.id == 1) and cliente.responsable != user:
-                return Response(
-                    {"error": "No tienes permiso para reactivar este cliente"}, 
-                    status=status.HTTP_403_FORBIDDEN
-                )
-                
+                return Response({"error": "No autorizado"}, status=status.HTTP_403_FORBIDDEN)
         except Cliente.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+        fecha_reactivacion = request.data.get('fecha', timezone.now().date())
         cliente.estado = True
-        cliente.fecha_baja = None
+        cliente.fecha_baja = None 
         cliente.save()
+        
+        HistorialEstado.objects.create(
+            cliente=cliente,
+            tipo_evento='REACTIVACION',
+            fecha=fecha_reactivacion,
+            usuario_responsable=request.user
+        )
         
         return Response({
             "code": 200,

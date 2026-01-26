@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 class Cliente(models.Model):
     class RegimenTributario(models.TextChoices):
@@ -94,3 +95,28 @@ class Credenciales(models.Model):
 
     def __str__(self):
         return f"Creds: {self.cliente.ruc}"
+    
+class HistorialEstado(models.Model):
+    class TipoEvento(models.TextChoices):
+        INGRESO = 'INGRESO', 'Ingreso Nuevo'
+        BAJA = 'BAJA', 'Baja Temporal'
+        REACTIVACION = 'REACTIVACION', 'Reactivación'
+        BAJA_DEFINITIVA = 'BAJA_DEFINITIVA', 'Baja Definitiva'
+
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='historial_estados')
+    tipo_evento = models.CharField(max_length=20, choices=TipoEvento.choices)
+    fecha = models.DateField(default=timezone.now, verbose_name="Fecha del Evento")
+    
+    usuario_responsable = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-fecha', '-created_at']
+
+    def __str__(self):
+        return f"{self.cliente.ruc} - {self.get_tipo_evento_display()} ({self.fecha})"
