@@ -94,3 +94,30 @@ class Credenciales(models.Model):
 
     def __str__(self):
         return f"Creds: {self.cliente.ruc}"
+
+
+class HistorialBaja(models.Model):
+    """Modelo para registrar el historial de todas las bajas de clientes"""
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='historial_bajas')
+    fecha_baja = models.DateTimeField(auto_now_add=True)
+    fecha_reactivacion = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de Reactivación')
+    usuario_baja = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="bajas_registradas"
+    )
+    razon = models.CharField(max_length=255, blank=True, null=True, verbose_name='Razón de la Baja')
+    estado = models.CharField(
+        max_length=20,
+        choices=[('BAJA', 'En Baja'), ('REACTIVADO', 'Reactivado')],
+        default='BAJA'
+    )
+
+    class Meta:
+        ordering = ['-fecha_baja']
+        verbose_name = 'Historial de Baja'
+        verbose_name_plural = 'Historiales de Bajas'
+
+    def __str__(self):
+        return f"{self.cliente.ruc} - {self.cliente.razon_social} ({self.estado})"

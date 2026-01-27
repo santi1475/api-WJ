@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
 from django.utils import timezone
-from .models import Cliente
-from .serializers import ClienteSerializer
+from .models import Cliente, HistorialBaja
+from .serializers import ClienteSerializer, HistorialBajaSerializer
 from .utils import generar_excel_masivo
 
 class ClienteViewSet(viewsets.ModelViewSet):
@@ -96,10 +96,19 @@ class ClienteViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='dar-baja')
     def dar_baja(self, request, pk=None):
         cliente = self.get_object()
+        razon = request.data.get('razon', '')
         
         cliente.estado = False
         cliente.fecha_baja = timezone.now().date()
         cliente.save()
+
+        # Registrar en historial
+        HistorialBaja.objects.create(
+            cliente=cliente,
+            usuario_baja=request.user,
+            razon=razon,
+            estado='BAJA'
+        )
 
         return Response({
             "code": 200,
@@ -127,8 +136,28 @@ class ClienteViewSet(viewsets.ModelViewSet):
         cliente.estado = True
         cliente.fecha_baja = None
         cliente.save()
+
+        # Actualizar último registro del historial
+        ultimo_historial = HistorialBaja.objects.filter(cliente=cliente, estado='BAJA').last()
+        if ultimo_historial:
+            ultimo_historial.estado = 'REACTIVADO'
+            ultimo_historial.fecha_reactivacion = timezone.now()
+            ultimo_historial.save()
         
         return Response({
             "code": 200,
             "message": f"Cliente {cliente.razon_social} reactivado exitosamente."
         })
+
+    @action(detail=False, methods=['get'], url_path='historial-bajas')
+    def historial_bajas(self, request):
+        """Obtiene el historial completo de todas las bajas de clientes"""
+        user = request.user
+        queryset = HistorialBaja.objects.select_related('cliente', 'usuario_baja').all()
+        
+        # Filtrar por responsable si no es superuser
+        if not (user.is_superuser or user.id == 1):
+            queryset = queryset.filter(cliente__responsable=user)
+        
+        serializer = HistorialBajaSerializer(queryset, many=True)
+        return Response(serializer.data)
