@@ -54,6 +54,7 @@ class HistorialBajaSerializer(serializers.ModelSerializer):
 class ClienteSerializer(serializers.ModelSerializer):
     credenciales = CredencialesSerializer()
     responsable_info = serializers.SerializerMethodField()
+    historial = HistorialEstadoSerializer(source='historial_estados', many=True, read_only=True)
 
     class Meta:
         model = Cliente
