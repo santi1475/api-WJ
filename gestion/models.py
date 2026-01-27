@@ -95,28 +95,30 @@ class Credenciales(models.Model):
 
     def __str__(self):
         return f"Creds: {self.cliente.ruc}"
-    
-class HistorialEstado(models.Model):
-    class TipoEvento(models.TextChoices):
-        INGRESO = 'INGRESO', 'Ingreso Nuevo'
-        BAJA = 'BAJA', 'Baja Temporal'
-        REACTIVACION = 'REACTIVACION', 'Reactivación'
-        BAJA_DEFINITIVA = 'BAJA_DEFINITIVA', 'Baja Definitiva'
 
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='historial_estados')
-    tipo_evento = models.CharField(max_length=20, choices=TipoEvento.choices)
-    fecha = models.DateField(default=timezone.now, verbose_name="Fecha del Evento")
-    
-    usuario_responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True
+
+class HistorialBaja(models.Model):
+    """Modelo para registrar el historial de todas las bajas de clientes"""
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='historial_bajas')
+    fecha_baja = models.DateTimeField(auto_now_add=True)
+    fecha_reactivacion = models.DateTimeField(null=True, blank=True, verbose_name='Fecha de Reactivación')
+    usuario_baja = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="bajas_registradas"
     )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
+    razon = models.CharField(max_length=255, blank=True, null=True, verbose_name='Razón de la Baja')
+    estado = models.CharField(
+        max_length=20,
+        choices=[('BAJA', 'En Baja'), ('REACTIVADO', 'Reactivado')],
+        default='BAJA'
+    )
 
     class Meta:
-        ordering = ['-fecha', '-created_at']
+        ordering = ['-fecha_baja']
+        verbose_name = 'Historial de Baja'
+        verbose_name_plural = 'Historiales de Bajas'
 
     def __str__(self):
-        return f"{self.cliente.ruc} - {self.get_tipo_evento_display()} ({self.fecha})"
+        return f"{self.cliente.ruc} - {self.cliente.razon_social} ({self.estado})"

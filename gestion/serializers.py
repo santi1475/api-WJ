@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Cliente, Credenciales, HistorialEstado
+from .models import Cliente, Credenciales, HistorialBaja
 
 class CredencialesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,12 +13,43 @@ class ResponsableSerializer(serializers.Serializer):
     last_name = serializers.CharField()
     email = serializers.EmailField()
 
-class HistorialEstadoSerializer(serializers.ModelSerializer):
-    responsable_nombre = serializers.CharField(source='usuario_responsable.username', read_only=True)
+class HistorialBajaSerializer(serializers.ModelSerializer):
+    usuario_baja_info = serializers.SerializerMethodField()
+    cliente_info = serializers.SerializerMethodField()
 
     class Meta:
-        model = HistorialEstado
-        fields = ['id', 'tipo_evento', 'fecha', 'usuario_responsable', 'responsable_nombre', 'created_at']
+        model = HistorialBaja
+        fields = ['id', 'cliente', 'cliente_info', 'fecha_baja', 'fecha_reactivacion', 'usuario_baja', 'usuario_baja_info', 'razon', 'estado']
+        read_only_fields = ['id', 'fecha_baja']
+
+    def get_usuario_baja_info(self, obj):
+        if obj.usuario_baja:
+            return {
+                'id': obj.usuario_baja.id,
+                'username': obj.usuario_baja.username,
+                'first_name': obj.usuario_baja.first_name or '',
+                'last_name': obj.usuario_baja.last_name or '',
+                'full_name': self._get_full_name(obj.usuario_baja)
+            }
+        return None
+
+    def get_cliente_info(self, obj):
+        return {
+            'ruc': obj.cliente.ruc,
+            'razon_social': obj.cliente.razon_social,
+            'estado': obj.cliente.estado
+        }
+
+    def _get_full_name(self, user):
+        """Retorna el nombre completo o username si no hay nombre"""
+        if user.first_name and user.last_name:
+            return f"{user.first_name} {user.last_name}".strip()
+        elif user.first_name:
+            return user.first_name
+        elif user.last_name:
+            return user.last_name
+        else:
+            return user.username
 
 class ClienteSerializer(serializers.ModelSerializer):
     credenciales = CredencialesSerializer()
