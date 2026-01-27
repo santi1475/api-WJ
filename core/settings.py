@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-
+import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -72,14 +72,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'saas_db'),
-        'USER': os.environ.get('DB_USER', 'santiago'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', '1475'),
-        'HOST': os.environ.get('DB_HOST', 'db'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-    }
+    'default': dj_database_url.config(
+        # Esto permite que siga funcionando en tu PC local si no hay variable DATABASE_URL
+        default=f"postgres://{os.environ.get('DB_USER', 'santiago')}:{os.environ.get('DB_PASSWORD', '1475')}@{os.environ.get('DB_HOST', 'db')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'saas_db')}",
+        conn_max_age=600
+    )
 }
 
 

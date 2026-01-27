@@ -8,3 +8,4 @@ redis
 django-cors-headers
 django-encrypted-model-fields
 openpyxl
+dj-database-url
