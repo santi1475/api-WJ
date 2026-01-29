@@ -20,6 +20,7 @@ class Cliente(models.Model):
         A = 'A', 'Categoría A'
         B = 'B', 'Categoría B'
         C = 'C', 'Categoría C'
+        N_T = 'N/T', 'N/T - No definido'
 
     # IDENTIFICACIÓN
     ruc = models.CharField(max_length=11, unique=True, primary_key=True)
@@ -122,3 +123,40 @@ class HistorialBaja(models.Model):
 
     def __str__(self):
         return f"{self.cliente.ruc} - {self.cliente.razon_social} ({self.estado})"
+
+class HistorialEstado(models.Model):
+    class TipoEvento(models.TextChoices):
+        INGRESO = 'INGRESO', 'Ingreso'
+        REACTIVACION = 'REACTIVACION', 'Reactivación'
+        BAJA = 'BAJA', 'Baja'
+
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='historial_estados')
+    tipo_evento = models.CharField(max_length=20, choices=TipoEvento.choices)
+    fecha = models.DateField(default=timezone.now)
+    usuario_responsable = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="estados_registrados"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Historial de Estado'
+        verbose_name_plural = 'Historiales de Estados'
+
+    def __str__(self):
+        return f"{self.cliente.ruc} - {self.tipo_evento} ({self.fecha})"
+
+class TipoRegimenLaboral(models.Model):
+    descripcion = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Tipo de Régimen Laboral'
+        verbose_name_plural = 'Tipos de Régimen Laboral'
+
+    def __str__(self):
+        return self.descripcion

@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
 from django.utils import timezone
-from .models import Cliente, HistorialBaja
-from .serializers import ClienteSerializer, HistorialBajaSerializer
+from .models import Cliente, HistorialBaja, HistorialEstado, TipoRegimenLaboral
+from .serializers import ClienteSerializer, HistorialBajaSerializer, TipoRegimenLaboralSerializer
 from .utils import generar_excel_masivo
 
 class ClienteViewSet(viewsets.ModelViewSet):
@@ -105,7 +105,8 @@ class ClienteViewSet(viewsets.ModelViewSet):
         
         # Actualizamos estado actual
         cliente.estado = False
-        cliente.fecha_baja = fecha_baja
+        cliente.estado = False
+        cliente.fecha_baja = timezone.now().date()
         cliente.save()
 
         # Registrar en historial
@@ -143,6 +144,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
             ultimo_historial.fecha_reactivacion = timezone.now()
             ultimo_historial.save()
         
+        
         HistorialEstado.objects.create(
             cliente=cliente,
             tipo_evento='REACTIVACION',
@@ -167,3 +169,8 @@ class ClienteViewSet(viewsets.ModelViewSet):
         
         serializer = HistorialBajaSerializer(queryset, many=True)
         return Response(serializer.data)
+
+class TipoRegimenLaboralViewSet(viewsets.ModelViewSet):
+    queryset = TipoRegimenLaboral.objects.all()
+    serializer_class = TipoRegimenLaboralSerializer
+    permission_classes = [IsAuthenticated]

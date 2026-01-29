@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Cliente, Credenciales, HistorialBaja
+from .models import Cliente, Credenciales, HistorialBaja, TipoRegimenLaboral
 
 class CredencialesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,6 +12,11 @@ class ResponsableSerializer(serializers.Serializer):
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     email = serializers.EmailField()
+    
+class TipoRegimenLaboralSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoRegimenLaboral
+        fields = '__all__'
 
 class HistorialBajaSerializer(serializers.ModelSerializer):
     usuario_baja_info = serializers.SerializerMethodField()
@@ -37,7 +42,9 @@ class HistorialBajaSerializer(serializers.ModelSerializer):
         return {
             'ruc': obj.cliente.ruc,
             'razon_social': obj.cliente.razon_social,
-            'estado': obj.cliente.estado
+            'estado': obj.cliente.estado,
+            'tipo_empresa': obj.cliente.tipo_empresa,
+            'categoria': obj.cliente.categoria
         }
 
     def _get_full_name(self, user):
@@ -54,7 +61,7 @@ class HistorialBajaSerializer(serializers.ModelSerializer):
 class ClienteSerializer(serializers.ModelSerializer):
     credenciales = CredencialesSerializer()
     responsable_info = serializers.SerializerMethodField()
-    historial = HistorialEstadoSerializer(source='historial_estados', many=True, read_only=True)
+    historial = HistorialBajaSerializer(source='historial_bajas', many=True, read_only=True)
 
     class Meta:
         model = Cliente

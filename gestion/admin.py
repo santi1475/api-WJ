@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Cliente, Credenciales, HistorialEstado
+from .models import Cliente, Credenciales, HistorialBaja
 
 class CredencialesInline(admin.StackedInline):
     model = Credenciales
@@ -7,11 +7,11 @@ class CredencialesInline(admin.StackedInline):
     verbose_name_plural = 'Claves y Accesos'
     
 class HistorialInline(admin.TabularInline):
-    model = HistorialEstado
+    model = HistorialBaja
     extra = 0
-    readonly_fields = ('fecha', 'tipo_evento', 'usuario_responsable', 'created_at')
+    readonly_fields = ('fecha_baja', 'fecha_reactivacion', 'usuario_baja', 'razon', 'estado')
     can_delete = False
-    ordering = ('-fecha',)
+    ordering = ('-fecha_baja',)
 
 @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin):
