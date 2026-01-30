@@ -27,7 +27,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = Cliente.objects.select_related('credenciales', 'responsable').all()
         
-        if not self.request.query_params.get('include_deleted'):
+        if self.action != 'retrieve' and not self.request.query_params.get('include_deleted'):
             queryset = queryset.filter(estado=True)
         
         if user.is_superuser or user.id == 1:
