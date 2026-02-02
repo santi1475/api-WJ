@@ -72,8 +72,9 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', f"postgres://{os.environ.get('DB_USER', 'santiago')}:{os.environ.get('DB_PASSWORD', '1475')}@{os.environ.get('DB_HOST', 'db')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'saas_db')}"),
-        conn_max_age=600
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True # Supabase requiere SSL
     )
 }
 
@@ -126,7 +127,6 @@ REST_FRAMEWORK = {
 }
 
 cors_hosts = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
-
 CORS_ALLOWED_ORIGINS = cors_hosts.split(",")
 
 FIELD_ENCRYPTION_KEY = os.environ.get(
