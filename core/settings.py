@@ -12,13 +12,12 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
-
+SECRET_KEY = os.environ.get('SECRET_KEY', '971993048SGV')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
-
+# core/settings.py
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 # Application definition
 
@@ -73,8 +72,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        # Esto permite que siga funcionando en tu PC local si no hay variable DATABASE_URL
-        default=f"postgres://{os.environ.get('DB_USER', 'santiago')}:{os.environ.get('DB_PASSWORD', '1475')}@{os.environ.get('DB_HOST', 'db')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'saas_db')}",
+        default=os.environ.get('DATABASE_URL', f"postgres://{os.environ.get('DB_USER', 'santiago')}:{os.environ.get('DB_PASSWORD', '1475')}@{os.environ.get('DB_HOST', 'db')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'saas_db')}"),
         conn_max_age=600
     )
 }
