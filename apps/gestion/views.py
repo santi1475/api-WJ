@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from .models import Cliente, HistorialBaja, HistorialEstado, TipoRegimenLaboral
 from .serializers import ClienteSerializer, HistorialBajaSerializer, TipoRegimenLaboralSerializer
-from .utils import generar_excel_masivo
+from core_shared.utils.excel import generar_excel_masivo
 
 class ClienteViewSet(viewsets.ModelViewSet):
     serializer_class = ClienteSerializer

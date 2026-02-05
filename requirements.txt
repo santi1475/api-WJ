@@ -3,10 +3,14 @@ psycopg2-binary>=2.9
 djangorestframework
 djangorestframework-simplejwt
 python-dotenv
+python-decouple
 celery
 redis
+django-celery-beat
+django-celery-results
 django-cors-headers
 django-encrypted-model-fields
 openpyxl
 dj-database-url
 gunicorn
+requests
