@@ -21,5 +21,5 @@ RUN pip install -r requirements.txt
 # Copiamos el código
 COPY . /code/
 
-# Comando para producción (Railway inyectará el PORT automáticamente)
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:${PORT:-8000}"]
+# Comando sugerido para el Dockerfile
+CMD ["sh", "-c", "python manage.py migrate && gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000}"]
