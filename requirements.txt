@@ -14,3 +14,4 @@ openpyxl
 dj-database-url
 gunicorn
 requests
+whitenoise
