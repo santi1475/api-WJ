@@ -1,17 +1,18 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.permissions import IsAuthenticated
+
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
 from django.utils import timezone
-from .models import Cliente, HistorialBaja, HistorialEstado, TipoRegimenLaboral
-from .serializers import ClienteSerializer, HistorialBajaSerializer, TipoRegimenLaboralSerializer
+from .models import Cliente, HistorialBaja, HistorialEstado, TipoRegimenLaboral, Responsable
+from .serializers import ClienteSerializer, HistorialBajaSerializer, TipoRegimenLaboralSerializer, ResponsableSerializer
 from core_shared.utils.excel import generar_excel_masivo
 
 class ClienteViewSet(viewsets.ModelViewSet):
     serializer_class = ClienteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, permissions.DjangoModelPermissions]
     
     def perform_create(self, serializer):
         cliente = serializer.save()
@@ -30,22 +31,19 @@ class ClienteViewSet(viewsets.ModelViewSet):
         if self.action != 'retrieve' and not self.request.query_params.get('include_deleted'):
             queryset = queryset.filter(estado=True)
         
-        if user.is_superuser or user.id == 1:
-            return queryset
-        
-        return queryset.filter(responsable=user)
+        return queryset
     
     @action(detail=False, methods=['get'], url_path='dashboard-all')
     def dashboard_all(self, request):
         
-        queryset = Cliente.objects.select_related('credenciales', 'responsable').all()
+        queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'], url_path='statistics')
     def statistics(self, request):
         
-        queryset = Cliente.objects.all()
+        queryset = self.get_queryset()
         
         # Total de clientes activos
         total_activos = queryset.filter(estado=True).count()
@@ -92,8 +90,8 @@ class ClienteViewSet(viewsets.ModelViewSet):
         user = request.user
         queryset = Cliente.objects.filter(estado=False).select_related('credenciales', 'responsable')
         
-        if not (user.is_superuser or user.id == 1):
-            queryset = queryset.filter(responsable=user)
+        # if not (user.is_superuser or user.id == 1):
+        #    queryset = queryset.filter(responsable=user)
             
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
@@ -127,8 +125,9 @@ class ClienteViewSet(viewsets.ModelViewSet):
         user = request.user
         try:
             cliente = Cliente.objects.get(pk=pk)
-            if not (user.is_superuser or user.id == 1) and cliente.responsable != user:
-                return Response({"error": "No autorizado"}, status=status.HTTP_403_FORBIDDEN)
+            if not (user.is_superuser or user.id == 1):
+                if not cliente.responsable or cliente.responsable.nombre != user.username:
+                    return Response({"error": "No autorizado"}, status=status.HTTP_403_FORBIDDEN)
         except Cliente.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -164,8 +163,9 @@ class ClienteViewSet(viewsets.ModelViewSet):
         queryset = HistorialBaja.objects.select_related('cliente', 'usuario_baja').all()
         
         # Filtrar por responsable si no es superuser
-        if not (user.is_superuser or user.id == 1):
-            queryset = queryset.filter(cliente__responsable=user)
+        # Filtrar por responsable si no es superuser
+        # if not (user.is_superuser or user.id == 1):
+        #    queryset = queryset.filter(cliente__responsable=user)
         
         serializer = HistorialBajaSerializer(queryset, many=True)
         return Response(serializer.data)
@@ -173,4 +173,9 @@ class ClienteViewSet(viewsets.ModelViewSet):
 class TipoRegimenLaboralViewSet(viewsets.ModelViewSet):
     queryset = TipoRegimenLaboral.objects.all()
     serializer_class = TipoRegimenLaboralSerializer
+    permission_classes = [IsAuthenticated]
+    
+class ResponsableViewSet(viewsets.ModelViewSet):
+    queryset = Responsable.objects.all()
+    serializer_class = ResponsableSerializer
     permission_classes = [IsAuthenticated]

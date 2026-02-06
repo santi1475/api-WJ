@@ -5,7 +5,7 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 django.setup()
 
-from gestion.models import TipoRegimenLaboral
+from apps.gestion.models import TipoRegimenLaboral
 
 regimenes = ["Pequeña Emp.", "Micro Empresa", "ETC."]
 

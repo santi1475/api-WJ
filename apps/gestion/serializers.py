@@ -1,17 +1,15 @@
 from rest_framework import serializers
-from .models import Cliente, Credenciales, HistorialBaja, TipoRegimenLaboral
+from .models import Cliente, Credenciales, HistorialBaja, TipoRegimenLaboral, Responsable
+
+class ResponsableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Responsable
+        fields = ['id', 'nombre', 'celular', 'activo']
 
 class CredencialesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Credenciales
         exclude = ['cliente', 'id']
-
-class ResponsableSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    username = serializers.CharField()
-    first_name = serializers.CharField()
-    last_name = serializers.CharField()
-    email = serializers.EmailField()
     
 class TipoRegimenLaboralSerializer(serializers.ModelSerializer):
     class Meta:
@@ -60,24 +58,12 @@ class HistorialBajaSerializer(serializers.ModelSerializer):
 
 class ClienteSerializer(serializers.ModelSerializer):
     credenciales = CredencialesSerializer()
-    responsable_info = serializers.SerializerMethodField()
+    responsable_info = ResponsableSerializer(source='responsable', read_only=True)
     historial = HistorialBajaSerializer(source='historial_bajas', many=True, read_only=True)
 
     class Meta:
         model = Cliente
         fields = '__all__'
-
-    def get_responsable_info(self, obj):
-        if obj.responsable:
-            return {
-                'id': obj.responsable.id,
-                'username': obj.responsable.username,
-                'first_name': obj.responsable.first_name or '',
-                'last_name': obj.responsable.last_name or '',
-                'email': obj.responsable.email or '',
-                'full_name': self._get_full_name(obj.responsable)
-            }
-        return None
 
     def _get_full_name(self, user):
         """Retorna el nombre completo o username si no hay nombre"""
