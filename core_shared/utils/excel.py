@@ -26,7 +26,7 @@ def generar_excel_masivo(lista_rucs):
 
     headers = [
         'RUC', 'Razón Social', 'Propietario', 'DNI Propietario', 'Fecha Ingreso',
-        'Estado', 'Código Control', 'Responsable', 
+        'Estado', 'Código Control', 'Responsable', 'Celular Responsable',
         'Régimen Tributario', 'Tipo Empresa', 'Categoría',
         'Régimen Laboral Tipo', 'Régimen Laboral Fecha',
         'Ingresos Mensuales', 'Ingresos Anuales', 'Libros Societarios', 'Selectivo Consumo',
@@ -41,7 +41,7 @@ def generar_excel_masivo(lista_rucs):
     ]
 
     header_color_map = {
-        'RUC': fill_yellow, 'SOL Usuario': fill_yellow, 'SOL Clave': fill_yellow, 'Responsable': fill_yellow,
+        'RUC': fill_yellow, 'SOL Usuario': fill_yellow, 'SOL Clave': fill_yellow, 'Responsable': fill_yellow, 'Celular Responsable': fill_yellow,
         'Razón Social': fill_blue_light, 'Propietario': fill_blue_light, 'DNI Propietario': fill_blue_light,
         'Fecha Ingreso': fill_blue_light, 'Código Control': fill_blue_light, 'Detracción Cuenta': fill_blue_light,
         'Detracción Usuario': fill_blue_light, 'Detracción Clave': fill_blue_light, 'INEI Usuario': fill_blue_light,
@@ -72,6 +72,7 @@ def generar_excel_masivo(lista_rucs):
             cliente.ruc, cliente.razon_social, cliente.propietario, cliente.dni_propietario, cliente.fecha_ingreso,
             'Activo' if cliente.estado else 'Inactivo', cliente.codigo_control,
             str(cliente.responsable) if cliente.responsable else 'Sin Asignar',
+            cliente.responsable.celular if cliente.responsable and cliente.responsable.celular else '',
             cliente.get_regimen_tributario_display(), cliente.get_tipo_empresa_display(), cliente.get_categoria_display(),
             cliente.regimen_laboral_tipo, cliente.regimen_laboral_fecha,
             cliente.ingresos_mensuales, cliente.ingresos_anuales, cliente.libros_societarios,
