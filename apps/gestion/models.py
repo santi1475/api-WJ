@@ -59,6 +59,7 @@ class Cliente(models.Model):
     
     #Fecha de baja
     fecha_baja = models.DateField(null=True, blank=True, verbose_name='Fecha de Baja')
+    fecha_reactivacion = models.DateField(null=True, blank=True, verbose_name='Fecha de Reactivación')
 
     def __str__(self):
         return f"{self.ruc} - {self.razon_social}"

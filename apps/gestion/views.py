@@ -103,8 +103,8 @@ class ClienteViewSet(viewsets.ModelViewSet):
         
         # Actualizamos estado actual
         cliente.estado = False
-        cliente.estado = False
         cliente.fecha_baja = timezone.now().date()
+        cliente.fecha_reactivacion = None
         cliente.save()
 
         # Registrar en historial
@@ -113,6 +113,13 @@ class ClienteViewSet(viewsets.ModelViewSet):
             usuario_baja=request.user,
             razon=razon,
             estado='BAJA'
+        )
+        
+        HistorialEstado.objects.create(
+            cliente=cliente,
+            tipo_evento='BAJA',
+            fecha=cliente.fecha_baja,
+            usuario_responsable=request.user
         )
 
         return Response({
@@ -133,17 +140,16 @@ class ClienteViewSet(viewsets.ModelViewSet):
 
         fecha_reactivacion = request.data.get('fecha', timezone.now().date())
         cliente.estado = True
-        cliente.fecha_baja = None 
+        cliente.fecha_baja = None
+        cliente.fecha_reactivacion = fecha_reactivacion
         cliente.save()
 
-        # Actualizar último registro del historial
-        ultimo_historial = HistorialBaja.objects.filter(cliente=cliente, estado='BAJA').last()
+        # Actualizar último registro del historial (usamos .first() porque ordering es '-fecha_baja')
+        ultimo_historial = HistorialBaja.objects.filter(cliente=cliente, estado='BAJA').first()
         if ultimo_historial:
             ultimo_historial.estado = 'REACTIVADO'
             ultimo_historial.fecha_reactivacion = timezone.now()
             ultimo_historial.save()
-        
-        
         HistorialEstado.objects.create(
             cliente=cliente,
             tipo_evento='REACTIVACION',
