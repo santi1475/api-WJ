@@ -6,8 +6,8 @@ from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
 from django.utils import timezone
-from .models import Cliente, HistorialBaja, HistorialEstado, TipoRegimenLaboral, Responsable
-from .serializers import ClienteSerializer, HistorialBajaSerializer, TipoRegimenLaboralSerializer, ResponsableSerializer
+from .models import Cliente, HistorialBaja, HistorialEstado, TipoRegimenLaboral, Responsable, LibroSocietario
+from .serializers import ClienteSerializer, HistorialBajaSerializer, TipoRegimenLaboralSerializer, ResponsableSerializer, LibroSocietarioSerializer
 from core_shared.utils.excel import generar_excel_masivo
 
 class ClienteViewSet(viewsets.ModelViewSet):
@@ -184,4 +184,9 @@ class TipoRegimenLaboralViewSet(viewsets.ModelViewSet):
 class ResponsableViewSet(viewsets.ModelViewSet):
     queryset = Responsable.objects.all()
     serializer_class = ResponsableSerializer
+    permission_classes = [IsAuthenticated]
+
+class LibroSocietarioViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = LibroSocietario.objects.all()
+    serializer_class = LibroSocietarioSerializer
     permission_classes = [IsAuthenticated]

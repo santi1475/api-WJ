@@ -1,10 +1,15 @@
 from rest_framework import serializers
-from .models import Cliente, Credenciales, HistorialBaja, TipoRegimenLaboral, Responsable
+from .models import Cliente, Credenciales, HistorialBaja, TipoRegimenLaboral, Responsable, LibroSocietario
 
 class ResponsableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Responsable
         fields = ['id', 'nombre', 'celular', 'activo']
+
+class LibroSocietarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LibroSocietario
+        fields = ['id', 'nombre']
 
 class CredencialesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -60,6 +65,16 @@ class ClienteSerializer(serializers.ModelSerializer):
     credenciales = CredencialesSerializer()
     responsable_info = ResponsableSerializer(source='responsable', read_only=True)
     historial = HistorialBajaSerializer(source='historial_bajas', many=True, read_only=True)
+    
+    # Para escritura (recibe IDs) y lectura (devuelve el array de IDs en un list, aunque podríamos sobrescribir to_representation si queremos los objetos completos)
+    # Por defecto, ManyToManyField serializa como lista de IDs si no le decimos nada, que es lo más fácil para React Admin.
+    # Pero para mostrar en las tarjetas, sería mejor que devuelva la información completa:
+    libros_societarios_detalles = LibroSocietarioSerializer(source='libros_societarios', many=True, read_only=True)
+    libros_societarios = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=LibroSocietario.objects.all(),
+        required=False
+    )
 
     class Meta:
         model = Cliente
@@ -77,17 +92,30 @@ class ClienteSerializer(serializers.ModelSerializer):
             return user.username
 
     def create(self, validated_data):
-        credenciales_data = validated_data.pop('credenciales')
+        credenciales_data = validated_data.pop('credenciales', {})
+        libros_data = validated_data.pop('libros_societarios', [])
+        
         cliente = Cliente.objects.create(**validated_data)
+        
+        if libros_data:
+            cliente.libros_societarios.set(libros_data)
+            
         Credenciales.objects.create(cliente=cliente, **credenciales_data)
         return cliente
 
     def update(self, instance, validated_data):
         credenciales_data = validated_data.pop('credenciales', None)
+        libros_data = validated_data.pop('libros_societarios', None)
+        
         # Actualizar Cliente
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
+        
+        # Actualizar Libros
+        if libros_data is not None:
+            instance.libros_societarios.set(libros_data)
+            
         # Actualizar Credenciales
         if credenciales_data:
             for attr, value in credenciales_data.items():
