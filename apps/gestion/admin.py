@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import Cliente, Credenciales, HistorialBaja, Responsable
+from .models import Cliente, Credenciales, HistorialBaja, Responsable, LibroSocietario
+
+@admin.register(LibroSocietario)
+class LibroSocietarioAdmin(admin.ModelAdmin):
+    list_display = ('nombre',)
+    search_fields = ('nombre',)
 
 class CredencialesInline(admin.StackedInline):
     model = Credenciales
@@ -19,7 +24,7 @@ class ClienteAdmin(admin.ModelAdmin):
         
     list_display = ('ruc', 'razon_social', 'estado', 'fecha_ingreso', 'responsable')
     search_fields = ('ruc', 'razon_social')
-    list_filter = ('estado', 'regimen_tributario')
+    list_filter = ('estado', 'planilla','regimen_tributario')
 
 @admin.register(Responsable)
 class ResponsableAdmin(admin.ModelAdmin):

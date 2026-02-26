@@ -2,6 +2,17 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+class LibroSocietario(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Libro Societario'
+        verbose_name_plural = 'Libros Societarios'
+
+    def __str__(self):
+        return self.nombre
+
 class Cliente(models.Model):
     class RegimenTributario(models.TextChoices):
         RMT = 'RMT', 'Régimen MYPE Tributario'
@@ -38,6 +49,7 @@ class Cliente(models.Model):
         null=True, blank=True,
         related_name="clientes_asignados"
     )
+    planilla = models.BooleanField(default=False, verbose_name="Planilla")
 
     # CLASIFICACIÓN
     regimen_tributario = models.CharField(max_length=20, choices=RegimenTributario.choices, default=RegimenTributario.RMT)
@@ -51,7 +63,7 @@ class Cliente(models.Model):
     # FINANCIERO
     ingresos_mensuales = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     ingresos_anuales = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
-    libros_societarios = models.IntegerField(default=0)
+    libros_societarios = models.ManyToManyField(LibroSocietario, blank=True)
     selectivo_consumo = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
