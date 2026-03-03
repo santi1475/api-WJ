@@ -25,7 +25,7 @@ def generar_excel_masivo(lista_rucs):
     cat_fill_c = PatternFill(start_color='FFC7CE', fill_type='solid')
 
     headers = [
-        'RUC', 'Razón Social', 'Propietario', 'DNI Propietario', 'Fecha Ingreso',
+        'RUC', 'Último Dígito RUC', 'Razón Social', 'Propietario', 'Fecha Ingreso',
         'Estado', 'Código Control', 'Responsable', 'Celular Responsable',
         'Régimen Tributario', 'Tipo Empresa', 'Categoría',
         'Régimen Laboral Tipo', 'Régimen Laboral Fecha',
@@ -36,19 +36,19 @@ def generar_excel_masivo(lista_rucs):
         'INEI Usuario', 'INEI Clave',
         'AFP Net Usuario', 'AFP Net Clave',
         'Viva Essalud Usuario', 'Viva Essalud Clave',
-        'SIS Usuario', 'SIS Clave',
+        'SIS Clave',
         'Clave OSCE', 'Clave SENCICO'
     ]
 
     header_color_map = {
-        'RUC': fill_yellow, 'SOL Usuario': fill_yellow, 'SOL Clave': fill_yellow, 'Responsable': fill_yellow, 'Celular Responsable': fill_yellow,
-        'Razón Social': fill_blue_light, 'Propietario': fill_blue_light, 'DNI Propietario': fill_blue_light,
+        'RUC': fill_yellow, 'Último Dígito RUC': fill_yellow, 'SOL Usuario': fill_yellow, 'SOL Clave': fill_yellow, 'Responsable': fill_yellow, 'Celular Responsable': fill_yellow,
+        'Razón Social': fill_blue_light, 'Propietario': fill_blue_light,
         'Fecha Ingreso': fill_blue_light, 'Código Control': fill_blue_light, 'Detracción Cuenta': fill_blue_light,
         'Detracción Usuario': fill_blue_light, 'Detracción Clave': fill_blue_light, 'INEI Usuario': fill_blue_light,
         'INEI Clave': fill_blue_light, 'Clave OSCE': fill_blue_light, 'Clave SENCICO': fill_blue_light,
         'Régimen Tributario': fill_blue_light, 'Régimen Laboral Tipo': fill_blue_light,
         'Régimen Laboral Fecha': fill_blue_light, 'AFP Net Usuario': fill_blue_light, 'AFP Net Clave': fill_blue_light,
-        'Viva Essalud Usuario': fill_blue_light, 'Viva Essalud Clave': fill_blue_light, 'SIS Usuario': fill_blue_light,
+        'Viva Essalud Usuario': fill_blue_light, 'Viva Essalud Clave': fill_blue_light,
         'SIS Clave': fill_blue_light, 'PE': fill_blue_light,
         'Ingresos Mensuales': fill_orange_light, 'Ingresos Anuales': fill_orange_light,
         'Libros Societarios': fill_teal, 'Selectivo Consumo': fill_pink, 'Categoría': fill_purple,
@@ -69,7 +69,7 @@ def generar_excel_masivo(lista_rucs):
         creds = getattr(cliente, 'credenciales', None)
         
         fila = [
-            cliente.ruc, cliente.razon_social, cliente.propietario, cliente.dni_propietario, cliente.fecha_ingreso,
+            cliente.ruc, cliente.ultimo_digito_ruc if cliente.ultimo_digito_ruc else '', cliente.razon_social, cliente.propietario, cliente.fecha_ingreso,
             'Activo' if cliente.estado else 'Inactivo', cliente.codigo_control,
             str(cliente.responsable) if cliente.responsable else 'Sin Asignar',
             cliente.responsable.celular if cliente.responsable and cliente.responsable.celular else '',
@@ -84,7 +84,7 @@ def generar_excel_masivo(lista_rucs):
             creds.inei_usuario if creds else '', creds.inei_clave if creds else '',
             creds.afp_net_usuario if creds else '', creds.afp_net_clave if creds else '',
             creds.viva_essalud_usuario if creds else '', creds.viva_essalud_clave if creds else '',
-            creds.sis_usuario if creds else '', creds.sis_clave if creds else '',
+            creds.sis_clave if creds else '',
             creds.clave_osce if creds else '', creds.clave_sencico if creds else ''
         ]
         ws.append(fila)

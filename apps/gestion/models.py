@@ -37,7 +37,6 @@ class Cliente(models.Model):
     ruc = models.CharField(max_length=11, unique=True, primary_key=True)
     razon_social = models.CharField(max_length=255)
     propietario = models.CharField(max_length=255)
-    dni_propietario = models.CharField(max_length=8, blank=True, null=True)
     fecha_ingreso = models.DateField(blank=True, null=True, verbose_name='Fecha de Ingreso')
 
     # GESTIÓN
@@ -73,6 +72,17 @@ class Cliente(models.Model):
     fecha_baja = models.DateField(null=True, blank=True, verbose_name='Fecha de Baja')
     fecha_reactivacion = models.DateField(null=True, blank=True, verbose_name='Fecha de Reactivación')
 
+    # ULTIMO DIGITO
+    ultimo_digito_ruc = models.CharField(max_length=1, blank=True, null=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if self.ruc:
+            self.ultimo_digito_ruc = self.ruc[-1]
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['ultimo_digito_ruc', 'ruc']
+
     def __str__(self):
         return f"{self.ruc} - {self.razon_social}"
 
@@ -102,7 +112,6 @@ class Credenciales(models.Model):
     viva_essalud_clave = models.CharField(max_length=100, blank=True, null=True)
 
     # OTROS
-    sis_usuario = models.CharField(max_length=100, blank=True, null=True)
     sis_clave = models.CharField(max_length=100, blank=True, null=True)
     clave_osce = models.CharField(max_length=100, blank=True, null=True)
     clave_sencico = models.CharField(max_length=100, blank=True, null=True)
