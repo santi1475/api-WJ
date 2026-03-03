@@ -17,3 +17,7 @@ db.sqlite3
 postgres_data/
 
 celerybeat-schedule
+.agents
+.agent
+docs
+skills-lock.json
