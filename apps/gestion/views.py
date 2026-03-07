@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,8 +11,14 @@ from .models import Cliente, HistorialBaja, HistorialEstado, TipoRegimenLaboral,
 from .serializers import ClienteSerializer, HistorialBajaSerializer, TipoRegimenLaboralSerializer, ResponsableSerializer, LibroSocietarioSerializer
 from core_shared.utils.excel import generar_excel_masivo
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class ClienteViewSet(viewsets.ModelViewSet):
     serializer_class = ClienteSerializer
+    pagination_class = StandardResultsSetPagination
     permission_classes = [IsAuthenticated, permissions.DjangoModelPermissions]
     
     def perform_create(self, serializer):
@@ -26,7 +33,11 @@ class ClienteViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         
         user = self.request.user
-        queryset = Cliente.objects.select_related('credenciales', 'responsable').all()
+        queryset = Cliente.objects.select_related(
+            'credenciales', 'responsable'
+        ).prefetch_related(
+            'historial_bajas__usuario_baja', 'libros_societarios'
+        ).all()
         
         if self.action != 'retrieve' and not self.request.query_params.get('include_deleted'):
             queryset = queryset.filter(estado=True)
@@ -37,6 +48,12 @@ class ClienteViewSet(viewsets.ModelViewSet):
     def dashboard_all(self, request):
         
         queryset = self.get_queryset()
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+            
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
