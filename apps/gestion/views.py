@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, filters
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 
@@ -20,6 +20,8 @@ class ClienteViewSet(viewsets.ModelViewSet):
     serializer_class = ClienteSerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [IsAuthenticated, permissions.DjangoModelPermissions]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['ruc', 'razon_social', 'propietario']
     
     def perform_create(self, serializer):
         cliente = serializer.save()
@@ -47,7 +49,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='dashboard-all')
     def dashboard_all(self, request):
         
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
         
         page = self.paginate_queryset(queryset)
         if page is not None:
