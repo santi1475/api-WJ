@@ -104,6 +104,28 @@ class ClienteViewSet(viewsets.ModelViewSet):
         wb.save(response)
         return response
     
+    @action(detail=False, methods=['get'], url_path='exportar-filtro')
+    def exportar_filtro(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        rucs = list(queryset.values_list('ruc', flat=True))
+
+        if not rucs:
+            return Response(
+                {"error": "No hay clientes que coincidan con la búsqueda."}, 
+                status=400
+            )
+            
+        wb = generar_excel_masivo(rucs)
+        
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename=Clientes_Exportacion.xlsx'
+        
+        wb.save(response)
+        return response
+    
     @action(detail=False, methods=['get'], url_path='bajas')
     def listar_bajas(self, request):
         user = request.user
