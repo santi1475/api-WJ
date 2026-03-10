@@ -94,7 +94,9 @@ class ClienteViewSet(viewsets.ModelViewSet):
                 {"error": "No se seleccionaron clientes."}, 
                 status=400
             )
-        wb = generar_excel_masivo(rucs)
+            
+        clientes_filtrados = Cliente.objects.filter(pk__in=rucs)
+        wb = generar_excel_masivo(clientes_filtrados)
         
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -108,15 +110,13 @@ class ClienteViewSet(viewsets.ModelViewSet):
     def exportar_filtro(self, request):
         queryset = self.filter_queryset(self.get_queryset())
         
-        rucs = list(queryset.values_list('ruc', flat=True))
-
-        if not rucs:
+        if not queryset.exists():
             return Response(
                 {"error": "No hay clientes que coincidan con la búsqueda."}, 
                 status=400
             )
             
-        wb = generar_excel_masivo(rucs)
+        wb = generar_excel_masivo(queryset)
         
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -148,15 +148,15 @@ class ClienteViewSet(viewsets.ModelViewSet):
         if real_ids:
             q_objects |= Q(responsable_id__in=real_ids)
             
-        rucs = list(queryset.filter(q_objects).values_list('ruc', flat=True))
+        clientes_filtrados = queryset.filter(q_objects)
 
-        if not rucs:
+        if not clientes_filtrados.exists():
             return Response(
                 {"error": "No hay clientes asignados a los responsables seleccionados."}, 
                 status=400
             )
             
-        wb = generar_excel_masivo(rucs)
+        wb = generar_excel_masivo(clientes_filtrados)
         
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

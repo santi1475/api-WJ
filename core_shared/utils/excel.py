@@ -1,12 +1,13 @@
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
-def generar_excel_masivo(lista_rucs):
+def generar_excel_masivo(clientes_queryset):
     from apps.gestion.models import Cliente 
+    from openpyxl.cell import WriteOnlyCell
+    from openpyxl.utils import get_column_letter
 
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Reporte Clientes"
+    wb = openpyxl.Workbook(write_only=True)
+    ws = wb.create_sheet("Reporte Clientes")
 
     # --- Estilos ---
     font_header = Font(name='Calibri', size=11, bold=True, color='000000')
@@ -54,18 +55,27 @@ def generar_excel_masivo(lista_rucs):
         'Libros Societarios': fill_teal, 'Selectivo Consumo': fill_pink, 'Categoría': fill_purple,
     }
 
-    ws.append(headers)
-    
-    for cell in ws[1]:
+    # Autoajustar ancho de columnas basado SOLAMENTE en la cabecera antes de insertar filas
+    for idx, header_text in enumerate(headers, 1):
+        column_letter = get_column_letter(idx)
+        ws.column_dimensions[column_letter].width = (len(str(header_text)) + 2) * 1.5
+
+    # Insertar la cabecera con estilos
+    header_row = []
+    for h in headers:
+        cell = WriteOnlyCell(ws, value=h)
         cell.font = font_header
         cell.alignment = align_center
         cell.border = thin_border
-        if cell.value in header_color_map:
-            cell.fill = header_color_map[cell.value]
+        if h in header_color_map:
+            cell.fill = header_color_map[h]
+        header_row.append(cell)
+    
+    ws.append(header_row)
 
-    clientes = Cliente.objects.filter(pk__in=lista_rucs).select_related(
+    clientes = clientes_queryset.select_related(
         'credenciales', 'responsable'
-    ).prefetch_related('libros_societarios')
+    ).prefetch_related('libros_societarios').iterator(chunk_size=2000)
 
     for cliente in clientes:
         creds = getattr(cliente, 'credenciales', None)
@@ -89,27 +99,18 @@ def generar_excel_masivo(lista_rucs):
             creds.sis_clave if creds else '',
             creds.clave_osce if creds else '', creds.clave_sencico if creds else ''
         ]
-        ws.append(fila)
         
-        # Formato condicional de filas
-        for cell in ws[ws.max_row]:
-            cell.border = thin_border
-            cell.alignment = align_center
+        row_cells = []
+        for i, val in enumerate(fila):
+            cell = WriteOnlyCell(ws, value=val)
+            header_name = headers[i]
+            if header_name == 'Categoría' and val:
+                val_upper = str(val).upper()
+                if 'CATEGORÍA A' in val_upper or val == 'A': cell.fill = cat_fill_a
+                elif 'CATEGORÍA B' in val_upper or val == 'B': cell.fill = cat_fill_b
+                elif 'CATEGORÍA C' in val_upper or val == 'C': cell.fill = cat_fill_c
+            row_cells.append(cell)
             
-            # Colorear Categoría
-            if headers[cell.column - 1] == 'Categoría' and cell.value:
-                val = str(cell.value).upper()
-                if 'CATEGORÍA A' in val or cell.value == 'A': cell.fill = cat_fill_a
-                elif 'CATEGORÍA B' in val or cell.value == 'B': cell.fill = cat_fill_b
-                elif 'CATEGORÍA C' in val or cell.value == 'C': cell.fill = cat_fill_c
-
-    # Autoajustar ancho de columnas
-    for column_cells in ws.columns:
-        length = 0
-        column_letter = column_cells[0].column_letter
-        for cell in column_cells:
-            if cell.value:
-                length = max(length, len(str(cell.value)))
-        ws.column_dimensions[column_letter].width = (length + 2) * 1.1
+        ws.append(row_cells)
 
     return wb
