@@ -21,5 +21,8 @@ RUN pip install -r requirements.txt
 # Copiamos el código
 COPY . /code/
 
+# Crear carpeta de static para evitar el UserWarning de WhiteNoise
+RUN mkdir -p /code/staticfiles
+
 # Comando sugerido para el Dockerfile
 CMD gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --timeout 120

@@ -126,6 +126,46 @@ class ClienteViewSet(viewsets.ModelViewSet):
         wb.save(response)
         return response
     
+    @action(detail=False, methods=['post'], url_path='exportar-responsable')
+    def exportar_responsable(self, request):
+        responsables_ids = request.data.get('responsables_ids', [])
+        
+        if not responsables_ids:
+            return Response(
+                {"error": "No se seleccionaron responsables."}, 
+                status=400
+            )
+
+        # Get all clients belonging to these responsables
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # In case there's a "0" for "Sin responsable", handle it
+        q_objects = Q()
+        if 0 in responsables_ids or "0" in responsables_ids:
+            q_objects |= Q(responsable__isnull=True)
+            
+        real_ids = [r for r in responsables_ids if r != 0 and r != "0"]
+        if real_ids:
+            q_objects |= Q(responsable_id__in=real_ids)
+            
+        rucs = list(queryset.filter(q_objects).values_list('ruc', flat=True))
+
+        if not rucs:
+            return Response(
+                {"error": "No hay clientes asignados a los responsables seleccionados."}, 
+                status=400
+            )
+            
+        wb = generar_excel_masivo(rucs)
+        
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename=Clientes_Por_Responsable.xlsx'
+        
+        wb.save(response)
+        return response
+
     @action(detail=False, methods=['get'], url_path='bajas')
     def listar_bajas(self, request):
         user = request.user
