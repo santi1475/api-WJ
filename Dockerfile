@@ -24,5 +24,5 @@ COPY . /code/
 # Crear carpeta de static para evitar el UserWarning de WhiteNoise
 RUN mkdir -p /code/staticfiles
 
-# Comando sugerido para el Dockerfile
-CMD gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --timeout 120
+# Comando sugerido para el Dockerfile con manejo de concurrencia
+CMD gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --threads 2 --timeout 60
