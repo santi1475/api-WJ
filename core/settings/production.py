@@ -11,10 +11,12 @@ DATABASES = {
         default=os.environ.get('DATABASE_URL'),
         conn_max_age=600,
         conn_health_checks=True,
-        ssl_require=True,
-        options={"options": "-c statement_timeout=25000"} # 25 segundos máximo para cualquier query
+        ssl_require=True
     )
 }
+
+# 25 segundos máximo para cualquier query
+DATABASES['default']['OPTIONS'] = {'options': '-c statement_timeout=25000'}
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
