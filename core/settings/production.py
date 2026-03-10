@@ -10,7 +10,9 @@ DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
         conn_max_age=600,
-        ssl_require=True
+        conn_health_checks=True,
+        ssl_require=True,
+        options={"options": "-c statement_timeout=25000"} # 25 segundos máximo para cualquier query
     )
 }
 
