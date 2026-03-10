@@ -62,19 +62,15 @@ class ClienteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='statistics')
     def statistics(self, request):
         
-        queryset = self.get_queryset()
+        queryset = Cliente.objects.filter(estado=True)
         
-        # Total de clientes activos
-        total_activos = queryset.filter(estado=True).count()
+        total_activos = queryset.count()
         
-        # Ingresos totales (suma de ingresos anuales)
         ingresos_totales = queryset.aggregate(
             total=Sum('ingresos_anuales')
         )['total'] or 0
         
-        # Pendientes de declaración (clientes activos sin ingresos reportados)
         pendientes_declaracion = queryset.filter(
-            estado=True,
             ingresos_anuales=0
         ).count()
         
