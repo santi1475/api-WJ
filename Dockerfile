@@ -22,4 +22,4 @@ RUN pip install -r requirements.txt
 COPY . /code/
 
 # Comando sugerido para el Dockerfile
-CMD ["sh", "-c", "python manage.py migrate && gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000}"]
+CMD gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --timeout 120
