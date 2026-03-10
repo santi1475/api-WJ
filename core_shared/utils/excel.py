@@ -63,7 +63,9 @@ def generar_excel_masivo(lista_rucs):
         if cell.value in header_color_map:
             cell.fill = header_color_map[cell.value]
 
-    clientes = Cliente.objects.filter(pk__in=lista_rucs).select_related('credenciales', 'responsable')
+    clientes = Cliente.objects.filter(pk__in=lista_rucs).select_related(
+        'credenciales', 'responsable'
+    ).prefetch_related('libros_societarios')
 
     for cliente in clientes:
         creds = getattr(cliente, 'credenciales', None)
