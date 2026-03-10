@@ -61,6 +61,23 @@ class HistorialBajaSerializer(serializers.ModelSerializer):
         else:
             return user.username
 
+class ClienteDashboardSerializer(serializers.ModelSerializer):
+    """
+    Serializador liviano para el Dashboard.
+    Evita queries N+1 pesados omitiendo Credenciales, Historial y Libros.
+    El campo responsable se devuelve como ID o string simple para la UI básica.
+    """
+    responsable_nombre = serializers.CharField(source='responsable.nombre', read_only=True)
+
+    class Meta:
+        model = Cliente
+        fields = [
+            'ruc', 'razon_social', 'propietario', 'estado',
+            'tipo_empresa', 'categoria', 'regimen_tributario',
+            'ingresos_mensuales', 'ingresos_anuales',
+            'responsable', 'responsable_nombre', 'planilla'
+        ]
+
 class ClienteSerializer(serializers.ModelSerializer):
     credenciales = CredencialesSerializer()
     responsable_info = ResponsableSerializer(source='responsable', read_only=True)

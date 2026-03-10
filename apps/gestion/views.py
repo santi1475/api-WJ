@@ -49,14 +49,20 @@ class ClienteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='dashboard-all')
     def dashboard_all(self, request):
         
-        queryset = self.filter_queryset(self.get_queryset())
+        # Optimizacion vital: el dashboard no necesita credenciales ni libros, 
+        # usar un queryset plano evita que count() sobrecargue la memoria de postgres con JOINS
+        queryset = Cliente.objects.filter(estado=True)
+        queryset = self.filter_queryset(queryset)
+        
+        # Import local para evitar ciclos si es necesario, o import global
+        from .serializers import ClienteDashboardSerializer
         
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = ClienteDashboardSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
             
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = ClienteDashboardSerializer(queryset, many=True)
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'], url_path='statistics')
