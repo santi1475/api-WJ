@@ -44,6 +44,46 @@ class ClienteViewSet(viewsets.ModelViewSet):
         if self.action != 'retrieve' and not self.request.query_params.get('include_deleted'):
             queryset = queryset.filter(estado=True)
         
+        # ── Advanced filters (permission-gated) ──────────────────────────
+        if user.has_perm('gestion.can_use_advanced_filters'):
+            params = self.request.query_params
+            needs_distinct = False
+
+            categoria = params.get('categoria')
+            if categoria:
+                queryset = queryset.filter(categoria=categoria)
+
+            regimen_laboral_tipo = params.get('regimen_laboral_tipo')
+            if regimen_laboral_tipo:
+                queryset = queryset.filter(regimen_laboral_tipo=regimen_laboral_tipo)
+
+            responsable = params.get('responsable')
+            if responsable:
+                # Support comma-separated IDs for multi-select
+                resp_ids = [r.strip() for r in responsable.split(',') if r.strip()]
+                if len(resp_ids) == 1:
+                    queryset = queryset.filter(responsable_id=resp_ids[0])
+                elif len(resp_ids) > 1:
+                    queryset = queryset.filter(responsable_id__in=resp_ids)
+
+            ultimo_digito_ruc = params.get('ultimo_digito_ruc')
+            if ultimo_digito_ruc:
+                queryset = queryset.filter(ultimo_digito_ruc=ultimo_digito_ruc)
+
+            libros_societarios = params.get('libros_societarios')
+            if libros_societarios:
+                queryset = queryset.filter(libros_societarios__id=libros_societarios)
+                needs_distinct = True
+
+            selectivo_consumo = params.get('selectivo_consumo')
+            if selectivo_consumo is not None and selectivo_consumo != '':
+                queryset = queryset.filter(
+                    selectivo_consumo=selectivo_consumo.lower() == 'true'
+                )
+
+            if needs_distinct:
+                queryset = queryset.distinct()
+        
         return queryset
     
     @action(detail=False, methods=['get'], url_path='dashboard-all')
