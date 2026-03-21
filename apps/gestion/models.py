@@ -82,6 +82,9 @@ class Cliente(models.Model):
 
     class Meta:
         ordering = ['ultimo_digito_ruc', 'ruc']
+        permissions = [
+            ("can_use_advanced_filters", "Can use advanced client filters"),
+        ]
 
     def __str__(self):
         return f"{self.ruc} - {self.razon_social}"
