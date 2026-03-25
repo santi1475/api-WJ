@@ -84,6 +84,7 @@ class Cliente(models.Model):
         ordering = ['ultimo_digito_ruc', 'ruc']
         permissions = [
             ("can_use_advanced_filters", "Can use advanced client filters"),
+            ("can_use_simple_filters", "Can use simple client filters"),
         ]
 
     def __str__(self):
