@@ -66,13 +66,25 @@ class ClienteViewSet(viewsets.ModelViewSet):
                 elif len(resp_ids) > 1:
                     queryset = queryset.filter(responsable_id__in=resp_ids)
 
+            regimen_tributario = params.get('regimen_tributario')
+            if regimen_tributario:
+                regs = [r.strip() for r in regimen_tributario.split(',') if r.strip()]
+                if len(regs) == 1:
+                    queryset = queryset.filter(regimen_tributario=regs[0])
+                elif len(regs) > 1:
+                    queryset = queryset.filter(regimen_tributario__in=regs)
+
             ultimo_digito_ruc = params.get('ultimo_digito_ruc')
             if ultimo_digito_ruc:
                 queryset = queryset.filter(ultimo_digito_ruc=ultimo_digito_ruc)
 
             libros_societarios = params.get('libros_societarios')
             if libros_societarios:
-                queryset = queryset.filter(libros_societarios__id=libros_societarios)
+                libs = [l.strip() for l in libros_societarios.split(',') if l.strip()]
+                if len(libs) == 1:
+                    queryset = queryset.filter(libros_societarios__id=libs[0])
+                elif len(libs) > 1:
+                    queryset = queryset.filter(libros_societarios__id__in=libs)
                 needs_distinct = True
 
             selectivo_consumo = params.get('selectivo_consumo')
