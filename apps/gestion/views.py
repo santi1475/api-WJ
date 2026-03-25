@@ -44,8 +44,8 @@ class ClienteViewSet(viewsets.ModelViewSet):
         if self.action != 'retrieve' and not self.request.query_params.get('include_deleted'):
             queryset = queryset.filter(estado=True)
         
-        # ── Advanced filters (permission-gated) ──────────────────────────
-        if user.has_perm('gestion.can_use_advanced_filters'):
+        # ── Advanced and Simple filters ─────────────────────────────────
+        if user.has_perm('gestion.can_use_advanced_filters') or user.has_perm('gestion.can_use_simple_filters'):
             params = self.request.query_params
             needs_distinct = False
 
